@@ -6,6 +6,8 @@ cars_url = "https://www.kbb.com/car-finder/page-{}/"
 
 car_names = []
 
+session = requests.Session()
+
 #iterate through pages
 for page_num in range(1, 57):
     page_url = cars_url.format(page_num)  # Generate the URL for the current page
@@ -17,17 +19,23 @@ for page_num in range(1, 57):
         "seolink": "false"
     }
 
-    response = requests.get(page_url, params=parameters)
+    response = requests.get(page_url, params=parameters, allow_redirects=False)
+
+    # Check if it's a redirect
+    if response.status_code == 302:
+        redirect_url = response.headers['Location']
+        response = session.get(redirect_url)
+
     soup = BeautifulSoup(response.content, "html.parser")
 
-#Extract car names from current page and append to list 
+    #Extract car names from current page and append to list 
     car_names.extend([car.text.strip() for car in soup.find_all('h2')])
-
-    time.sleep(5)
 
 #Create the dataframe
 df = pd.DataFrame({'Model':car_names})
-print(df)
+
+df.to_excel("CarsData(2000-2005).xlsx", index=False)
+
 
 
 
